@@ -77,27 +77,27 @@ The PeerJS signaling server acts as a rendezvous point. It is only used to excha
 ```mermaid
 sequenceDiagram
     participant B as Browser (p2p-web)
-    participant S as PeerJS Signaling<br/>(0.peerjs.com)
+    participant S as PeerJS Signaling (0.peerjs.com)
     participant A as Agent (p2p-agent)
 
-    B->>S: WebSocket connect<br/>GET /peerjs?key=peerjs&id=&lt;random&gt;
-    S-->>B: {"type":"OPEN"} → assigns Peer ID (e.g. abc123)
+    B->>S: WebSocket connect — GET /peerjs?key=peerjs&id=random
+    S-->>B: type OPEN — assigns Peer ID (e.g. abc123)
     Note over B: Displays Peer ID to user
 
-    Note over A: User runs:<br/>p2p-agent --id abc123
+    Note over A: User runs: p2p-agent --id abc123
 
-    A->>S: WebSocket connect<br/>GET /peerjs?key=peerjs&id=&lt;random16&gt;
-    S-->>A: {"type":"OPEN"} → agent registered
+    A->>S: WebSocket connect — GET /peerjs?key=peerjs&id=random16
+    S-->>A: type OPEN — agent registered
 
-    A->>A: Create RTCPeerConnection<br/>Create DataChannel "peerjs-dc"<br/>Create SDP Offer<br/>Gather ICE candidates (full trickle)
+    A->>A: Create RTCPeerConnection, DataChannel, SDP Offer, gather ICE candidates
 
-    A->>S: {"type":"OFFER", "dst":"abc123", "payload":{sdp, connectionId, ...}}
-    S->>B: {"type":"OFFER", "src":"&lt;agentID&gt;", "payload":{sdp, ...}}
+    A->>S: type OFFER, dst abc123, payload sdp+connectionId
+    S->>B: type OFFER, src agentID, payload sdp
 
-    B->>B: PeerJS creates RTCPeerConnection<br/>Sets remote description (offer)<br/>Creates SDP Answer
+    B->>B: PeerJS creates RTCPeerConnection, sets remote description, creates SDP Answer
 
-    B->>S: {"type":"ANSWER", "dst":"&lt;agentID&gt;", "payload":{sdp, ...}}
-    S->>A: {"type":"ANSWER", "payload":{sdp, ...}}
+    B->>S: type ANSWER, dst agentID, payload sdp
+    S->>A: type ANSWER, payload sdp
 
     A->>A: SetRemoteDescription(answer)
 
