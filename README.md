@@ -2,6 +2,16 @@
 
 A lightweight peer-to-peer reverse shell built on WebRTC data channels, enabling direct encrypted shell access between peers **without a central relay server** — no VPN, no open ports, no SSH.
 
+> **Live demo:** [https://noaslr.io/utilities/p2p-shell/](https://noaslr.io/utilities/p2p-shell/)
+
+---
+
+## Demo
+
+<video src="demo.mp4" controls width="100%"></video>
+
+*An AI agent on macOS connects to the web interface, opens a shell, downloads a sample file, and exits the process remotely.*
+
 ---
 
 ## Table of Contents
