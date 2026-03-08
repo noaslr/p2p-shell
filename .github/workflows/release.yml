@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: p2p-agent/go.mod
+
+      - name: Compute version
+        id: version
+        run: |
+          DATE=$(date -u +'%y.%m.%d')
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "tag=${DATE}(${SHORT_SHA})" >> "$GITHUB_OUTPUT"
+
+      - name: Build binaries
+        working-directory: p2p-agent
+        run: |
+          mkdir -p dist
+          build() {
+            local goos=$1 goarch=$2 suffix=${3:-}
+            CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" go build \
+              -ldflags="-s -w" \
+              -trimpath \
+              -o "dist/p2p-agent-${goos}-${goarch}${suffix}" .
+          }
+          build linux   amd64
+          build linux   arm64
+          build linux   arm
+          build linux   386
+          build darwin  amd64
+          build darwin  arm64
+          build windows amd64 .exe
+          build windows arm64 .exe
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes "Built from commit \`$(git rev-parse HEAD)\`." \
+            p2p-agent/dist/*
