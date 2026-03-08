@@ -1,0 +1,45 @@
+# syntax=docker/dockerfile:1
+# Cross-compile p2p-agent for all target platforms.
+# Usage:
+#   docker build -f Dockerfile.build --output type=local,dest=../p2p-web/b/p2p-agent .
+# Or via build-docker.sh (recommended — handles the output path automatically)
+
+FROM golang:1.21-alpine AS builder
+
+# Avoid sum-DB round-trips; go.sum is the source of truth.
+ENV GONOSUMDB='*' \
+    GONOSUMCHECK='*' \
+    CGO_ENABLED=0
+
+WORKDIR /src
+
+# Cache module downloads as a separate layer.
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY *.go ./
+
+RUN mkdir /out && \
+    for target in \
+        linux/amd64 \
+        linux/arm64 \
+        linux/arm \
+        linux/386 \
+        darwin/amd64 \
+        darwin/arm64 \
+        windows/amd64 \
+        windows/arm64 \
+    ; do \
+        os="${target%/*}" arch="${target#*/}" ; \
+        suffix="" ; [ "$os" = "windows" ] && suffix=".exe" ; \
+        outfile="/out/${os}-${arch}${suffix}" ; \
+        printf "    %-30s → %s\n" "$target" "$(basename "$outfile")" ; \
+        GOOS="$os" GOARCH="$arch" go build \
+            -ldflags="-s -w" \
+            -trimpath \
+            -o "$outfile" . ; \
+    done
+
+# Export stage — used by --output to copy binaries to the host.
+FROM scratch
+COPY --from=builder /out /

@@ -1,0 +1,212 @@
+/* ═══════════════════════════════════════════════════════════
+   P2P Shell — Styles
+   ═══════════════════════════════════════════════════════════ */
+:root {
+    --bg:         #0c0c0c;
+    --surface:    #111111;
+    --panel:      #1a1a1a;
+    --border:     #2a2a2a;
+    --accent:     #00b894;
+    --accent-dim: #005c42;
+    --danger:     #e17055;
+    --warning:    #fdcb6e;
+    --text:       #d4d4d4;
+    --text-muted: #666;
+    --green:      #4ec9b0;
+    --blue:       #569cd6;
+    --red:        #f48771;
+    --yellow:     #dcdcaa;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Consolas', 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 13px;
+    overflow: hidden;
+}
+
+/* ─── Panel system ──────────────────────────────────────── */
+.panel { display: none; flex-direction: column; height: 100vh; }
+.panel.active { display: flex; }
+
+/* ─── Header ────────────────────────────────────────────── */
+.shell-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    flex-shrink: 0; gap: 12px;
+}
+.shell-header.compact { padding: 8px 16px; }
+
+.header-left  { display: flex; align-items: center; gap: 10px; }
+.header-center{ flex: 1; display: flex; align-items: center; justify-content: center; gap: 12px; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+
+.header-icon  { font-size: 22px; }
+.header-left h1 { font-size: 17px; font-weight: 700; color: var(--green); }
+.header-sub  { font-size: 11px; color: var(--text-muted); display: block; font-family: sans-serif; }
+
+.term-title { font-size: 15px; font-weight: 700; color: var(--green); }
+.term-peer  { font-size: 11px; color: var(--text-muted); margin-left: 8px; }
+
+.status-dot {
+    width: 7px; height: 7px; border-radius: 50%; display: inline-block;
+}
+.status-dot.init        { background: var(--text-muted); animation: pulse 1.3s infinite; }
+.status-dot.waiting     { background: var(--warning);    animation: pulse 1.3s infinite; }
+.status-dot.connected   { background: var(--accent); }
+.status-dot.disconnected{ background: var(--danger); }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+.e2e-badge {
+    font-family: sans-serif; font-size: 11px; font-weight: 600;
+    padding: 3px 8px; border-radius: 12px;
+    background: rgba(0,184,148,0.1); border: 1px solid rgba(0,184,148,0.3);
+    color: var(--accent);
+}
+.conn-status {
+    font-family: sans-serif; font-size: 12px; color: var(--text-muted);
+    display: flex; align-items: center; gap: 5px;
+}
+
+.btn-hdr {
+    background: var(--panel); border: 1px solid var(--border); color: var(--text-muted);
+    padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;
+    font-family: sans-serif; transition: background 0.15s, color 0.15s;
+}
+.btn-hdr:hover { background: var(--border); color: var(--text); }
+.btn-hdr-danger { color: var(--danger); border-color: rgba(225,112,85,0.4); }
+.btn-hdr-danger:hover { background: var(--danger); color: #0c0c0c; }
+
+/* ─── Waiting body ──────────────────────────────────────── */
+.waiting-body {
+    flex: 1; overflow-y: auto; padding: 24px;
+    display: flex; flex-direction: column; gap: 20px;
+    max-width: 860px; width: 100%; margin: 0 auto;
+}
+
+/* Peer ID card */
+.id-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 20px;
+}
+.id-label {
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+}
+.id-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+}
+.id-row code {
+    flex: 1; font-size: 14px; font-weight: 700;
+    color: var(--green); word-break: break-all;
+}
+.id-hint {
+    font-size: 11px; color: var(--text-muted); font-family: sans-serif;
+}
+.id-hint code { color: var(--yellow); font-size: 11px; }
+
+.pulse-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent); animation: pulse 1.3s infinite; flex-shrink: 0;
+}
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 4px; border: none; cursor: pointer; border-radius: 4px; font-size: 12px; font-weight: 600; transition: background 0.15s; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-sm { padding: 4px 8px; }
+.btn-copy { background: var(--panel); color: var(--text-muted); border: 1px solid var(--border); }
+.btn-copy:hover:not(:disabled) { background: var(--border); color: var(--text); }
+.btn-copy-cmd { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); font-family: sans-serif; padding: 5px 12px; }
+.btn-copy-cmd:hover:not(:disabled) { background: var(--accent); color: #000; }
+
+.hidden { display: none !important; }
+
+/* ─── Command section ───────────────────────────────────── */
+.cmd-section {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden;
+}
+.cmd-header {
+    padding: 12px 16px 0;
+    border-bottom: 1px solid var(--border);
+}
+.cmd-header h3 {
+    font-size: 13px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.6px;
+    margin-bottom: 10px; font-family: sans-serif;
+}
+
+.platform-tabs {
+    display: flex; flex-wrap: wrap; gap: 2px;
+    padding-bottom: 0;
+}
+.tab {
+    background: transparent; border: none; cursor: pointer;
+    color: var(--text-muted); padding: 6px 12px; font-size: 12px;
+    font-family: sans-serif; border-radius: 4px 4px 0 0;
+    transition: background 0.15s, color 0.15s;
+    border-bottom: 2px solid transparent;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--green); border-bottom-color: var(--green); background: rgba(78,201,176,0.05); }
+
+.cmd-block { padding: 14px 16px; }
+.cmd-row   { display: flex; align-items: flex-start; gap: 10px; }
+.cmd-pre   {
+    flex: 1; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 4px; padding: 12px 14px; overflow-x: auto;
+    font-size: 12px; line-height: 1.6; white-space: pre; color: var(--text);
+    font-family: inherit;
+}
+.cmd-pre .cmd-comment { color: var(--text-muted); }
+.cmd-pre .cmd-kw      { color: var(--blue); }
+.cmd-pre .cmd-str     { color: var(--yellow); }
+.cmd-pre .cmd-id      { color: var(--green); font-weight: 700; }
+.cmd-pre .cmd-flag    { color: var(--red); }
+
+.cmd-note {
+    padding: 8px 16px 12px;
+    font-size: 11px; color: var(--text-muted); font-family: sans-serif;
+    border-top: 1px solid var(--border);
+}
+
+/* ─── Waiting indicator ─────────────────────────────────── */
+.waiting-indicator {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; font-family: sans-serif; font-size: 13px; color: var(--text-muted);
+}
+.spinner {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite; flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Terminal ──────────────────────────────────────────── */
+.terminal-container {
+    flex: 1; min-height: 0; padding: 4px;
+    background: var(--bg);
+}
+.terminal-container .xterm { height: 100%; }
+.terminal-container .xterm-viewport { background: var(--bg) !important; }
+
+/* ─── Scrollbars ────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@media (max-width: 600px) {
+    .waiting-body { padding: 14px; }
+    .platform-tabs .tab { padding: 5px 8px; font-size: 11px; }
+    .shell-header.compact .header-center { display: none; }
+}

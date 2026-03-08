@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P Shell</title>
+
+    <!-- xterm.js -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐚</text></svg>">
+</head>
+<body>
+
+<!-- ══════════════════════ WAITING PANEL ══════════════════════ -->
+<div id="panel-waiting" class="panel active">
+
+    <header class="shell-header">
+        <div class="header-left">
+            <span class="header-icon">🐚</span>
+            <div>
+                <h1>P2P Shell</h1>
+                <span class="header-sub">WebRTC reverse shell — no server, no ports</span>
+            </div>
+        </div>
+        <div class="header-right" id="hdr-status">
+            <span class="status-dot init"></span>
+            <span id="hdr-status-text">Initializing…</span>
+        </div>
+    </header>
+
+    <div class="waiting-body">
+
+        <!-- Peer ID + copy -->
+        <div class="id-card" id="id-card">
+            <div class="id-label">
+                <span class="pulse-dot hidden" id="pulse-dot"></span>
+                Your Peer ID
+            </div>
+            <div class="id-row">
+                <code id="peer-id-display">—</code>
+                <button id="btn-copy-id" class="btn btn-sm btn-copy" title="Copy ID" disabled>📋</button>
+            </div>
+            <div class="id-hint">Share this ID as the <code>--id</code> argument to the agent</div>
+        </div>
+
+        <!-- Download commands -->
+        <div class="cmd-section" id="cmd-section">
+            <div class="cmd-header">
+                <h3>Download &amp; Execute Agent</h3>
+                <div class="platform-tabs" id="platform-tabs">
+                    <button class="tab active" data-platform="linux-amd64">Linux x86_64</button>
+                    <button class="tab" data-platform="linux-arm64">Linux arm64</button>
+                    <button class="tab" data-platform="linux-arm">Linux arm</button>
+                    <button class="tab" data-platform="darwin-arm64">macOS (Apple)</button>
+                    <button class="tab" data-platform="darwin-amd64">macOS (Intel)</button>
+                    <button class="tab" data-platform="windows-amd64">Windows</button>
+
+                </div>
+            </div>
+
+            <div class="cmd-block">
+                <div class="cmd-row">
+                    <pre id="cmd-display" class="cmd-pre"><span class="cmd-comment"># Waiting for Peer ID…</span></pre>
+                    <button id="btn-copy-cmd" class="btn btn-sm btn-copy-cmd" title="Copy command" disabled>📋 Copy</button>
+                </div>
+            </div>
+
+            <div class="cmd-note">
+                The agent connects back to this browser via WebRTC P2P (public STUN).
+                No firewall port-forwards required.
+            </div>
+        </div>
+
+        <!-- Waiting indicator -->
+        <div class="waiting-indicator" id="waiting-indicator">
+            <div class="spinner"></div>
+            <span id="waiting-text">Waiting for agent to connect…</span>
+        </div>
+
+    </div>
+</div>
+
+<!-- ══════════════════════ TERMINAL PANEL ══════════════════════ -->
+<div id="panel-terminal" class="panel">
+
+    <header class="shell-header compact">
+        <div class="header-left">
+            <span class="header-icon">🐚</span>
+            <div>
+                <span class="term-title">P2P Shell</span>
+                <span class="term-peer" id="term-peer-id"></span>
+            </div>
+        </div>
+        <div class="header-center">
+            <span class="e2e-badge">🔒 WebRTC E2E</span>
+            <span class="conn-status" id="conn-status">
+                <span class="status-dot connected"></span> Connected
+            </span>
+        </div>
+        <div class="header-right">
+            <!-- Hidden file input for upload -->
+            <input type="file" id="file-input" style="display:none" aria-hidden="true">
+            <button id="btn-upload"    class="btn-hdr" title="Upload a file to the remote agent">⬆ Upload</button>
+            <button id="btn-download"  class="btn-hdr" title="Download a file from the remote agent">⬇ Download</button>
+            <button id="btn-save-log"  class="btn-hdr" title="Save session log as plain text">💾 Log</button>
+            <button id="btn-exit-agent" class="btn-hdr btn-hdr-danger" title="Terminate the remote agent process">✕ Exit</button>
+            <button id="btn-reconnect" class="btn-hdr" title="Disconnect &amp; wait for new agent">⟳ New Session</button>
+        </div>
+    </header>
+
+    <div id="terminal-container" class="terminal-container"></div>
+
+</div>
+
+<!-- PeerJS + xterm.js -->
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
