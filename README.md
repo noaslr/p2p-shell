@@ -8,7 +8,7 @@ A lightweight peer-to-peer reverse shell built on WebRTC data channels, enabling
 
 ## Demo
 
-<video src="demo.mp4" controls width="100%"></video>
+![Demo](demo.gif)
 
 *An AI agent on macOS connects to the web interface, opens a shell, downloads a sample file, and exits the process remotely.*
 
