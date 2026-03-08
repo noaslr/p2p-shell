@@ -17,6 +17,7 @@ import (
 	"math/rand"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -123,6 +124,15 @@ func main() {
 		log.Fatalf("[-] PeerConnection: %v", err)
 	}
 	defer pc.Close()
+
+	// ── Port-forward DataChannels from p2p-client ────────────────────────
+	// The agent creates "peerjs-dc" itself, so that never appears here.
+	// Any "fwd-*" channel is a port-forward request from the client.
+	pc.OnDataChannel(func(dc *webrtc.DataChannel) {
+		if strings.HasPrefix(dc.Label(), "fwd-") {
+			go handleForwardChannel(dc)
+		}
+	})
 
 	// ── DataChannel ─────────────────────────────────────────────────────
 	ordered := true

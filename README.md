@@ -15,7 +15,11 @@ A lightweight peer-to-peer reverse shell built on WebRTC data channels, enabling
 - [Components](#components)
   - [p2p-web — Browser UI](#p2p-web--browser-ui)
   - [p2p-agent — Go CLI Agent](#p2p-agent--go-cli-agent)
+  - [p2p-client — Go CLI Client](#p2p-client--go-cli-client)
 - [Quick Start](#quick-start)
+- [p2p-client Usage](#p2p-client-usage)
+  - [Shell Session](#shell-session)
+  - [Local Port Forwarding](#local-port-forwarding)
 - [Self-Hosting](#self-hosting)
   - [Building the Agent Binaries](#building-the-agent-binaries)
   - [Serving the Web UI](#serving-the-web-ui)
@@ -25,14 +29,15 @@ A lightweight peer-to-peer reverse shell built on WebRTC data channels, enabling
 
 ## How It Works
 
-P2P Shell has two components:
+P2P Shell has three components:
 
 | Component | Role | Technology |
 |-----------|------|------------|
-| **p2p-web** | Browser-based terminal UI | HTML + PeerJS + xterm.js |
-| **p2p-agent** | Target machine CLI agent | Go + Pion WebRTC |
+| **p2p-web** | Browser-based terminal UI (listener) | HTML + PeerJS + xterm.js |
+| **p2p-agent** | Target machine CLI agent (caller) | Go + Pion WebRTC |
+| **p2p-client** | Headless CLI client — alternative to the browser | Go + Pion WebRTC |
 
-The browser acts as the **listener** — it opens a terminal and waits for an agent to connect. The agent acts as the **caller** — it dials the browser peer, establishes a direct WebRTC DataChannel, and attaches a PTY shell (or `cmd.exe` on Windows) to that channel. All traffic is **end-to-end encrypted** by DTLS (built into WebRTC).
+The **listener** (browser or p2p-client) opens a terminal and waits for an agent to connect. The **agent** acts as the caller — it dials the listener's Peer ID, establishes a direct WebRTC DataChannel, and attaches a PTY shell (or `cmd.exe` on Windows) to that channel. All traffic is **end-to-end encrypted** by DTLS (built into WebRTC).
 
 A third-party PeerJS signaling server (`0.peerjs.com`) is used only to exchange the initial WebRTC offer/answer handshake. Once the P2P connection is established, the signaling server carries no further traffic.
 
@@ -194,6 +199,7 @@ Located in `p2p-agent/`. A single Go binary with no runtime dependencies.
 | `main.go` | CLI entry point, PeerJS WebSocket signaling, WebRTC offer/answer, DataChannel setup |
 | `shell_unix.go` | PTY-based shell on Linux / macOS (build tag `!windows`) |
 | `shell_windows.go` | Pipe-based `cmd.exe` on Windows (build tag `windows`) |
+| `forward.go` | Port-forward DataChannel handler (bridges `fwd-*` channels to TCP) |
 | `build.sh` | Cross-compile for all platforms (requires Go toolchain on host) |
 | `build-docker.sh` | Cross-compile inside Docker (no local Go required) |
 | `Dockerfile.build` | Multi-stage Docker build for reproducible cross-compilation |
@@ -202,6 +208,24 @@ Located in `p2p-agent/`. A single Go binary with no runtime dependencies.
 - The agent **fully gathers ICE candidates before sending the offer** (rather than trickling). This ensures the offer arrives with all candidates embedded, simplifying firewall traversal and reducing round-trips over the signaling channel.
 - **PTY on Unix:** Uses `github.com/creack/pty` to spawn a real pseudoterminal so interactive programs (vim, htop, etc.) work correctly with ANSI codes and resize events.
 - **Control messages:** Terminal resize events are sent as `\x01` + JSON over the DataChannel. The `0x01` (SOH) prefix lets the agent distinguish control frames from raw stdin data without a separate channel.
+- **Port forwarding:** The agent listens for `fwd-*` DataChannels created by `p2p-client`. Each channel dials a TCP target on the agent's side and bridges bytes bidirectionally.
+
+### p2p-client — Go CLI Client
+
+Located in `p2p-client/`. A headless Go CLI that replaces `p2p-web` — useful in environments without a browser, in scripts, or when port forwarding is needed.
+
+| File | Purpose |
+|------|---------|
+| `main.go` | CLI entry point, PeerJS signaling (ANSWERER role), shell DataChannel wiring |
+| `terminal_unix.go` | Raw-mode stdin/stdout terminal, SIGWINCH resize (build tag `!windows`) |
+| `terminal_windows.go` | Raw-mode stdin/stdout terminal for Windows (build tag `windows`) |
+| `forward.go` | `-L` flag parsing, TCP listener, per-connection DataChannel bridge |
+| `build.sh` | Cross-compile for all platforms |
+
+**Key design decisions:**
+- `p2p-client` is the **ANSWERER** in WebRTC (like the browser). It registers with PeerJS, receives the agent's OFFER, and sends back an ANSWER — no SDP offer/answer library needed beyond pion.
+- **Raw terminal mode:** Uses `golang.org/x/term` to put stdin into raw mode, passing all keystrokes (including Ctrl sequences and arrow keys) directly to the agent's PTY.
+- **Port forwarding:** Each `-L` rule starts a TCP listener. For every incoming connection a new WebRTC DataChannel (`fwd-<id>`) is created on the existing PeerConnection, avoiding any re-negotiation overhead (SCTP handles additional channels natively).
 
 ---
 
@@ -258,6 +282,79 @@ Append `?stun=stun:your.server.com:3478` to the web UI URL. The custom server is
 
 ```
 https://yourhost/index.html?stun=stun:mystun.example.com:3478
+```
+
+---
+
+## p2p-client Usage
+
+`p2p-client` is a terminal-only alternative to the browser UI. It implements the same listener (ANSWERER) role as `p2p-web`, so the agent connects to it identically.
+
+### Shell Session
+
+```bash
+# Build from source
+cd p2p-client && go build -o p2p-client .
+
+# Run — prints a Peer ID, then waits
+./p2p-client
+
+# Output:
+# [*] p2p-client — https://github.com/noaslr/p2p-shell
+# [*] Connecting to signaling: 0.peerjs.com
+# [+] Peer ID: a3f9xkz2...
+# [*] Run on the agent:
+#
+#     p2p-agent --id a3f9xkz2...
+#
+# [*] Waiting for agent to connect...
+```
+
+On the target machine, run the agent with the printed ID:
+
+```bash
+p2p-agent --id a3f9xkz2...
+# or
+P2P_TARGET_ID=a3f9xkz2... p2p-agent
+```
+
+Once the agent connects the terminal enters raw mode — all keystrokes go directly to the remote PTY, just as in the browser.
+
+### Local Port Forwarding
+
+Use `-L [localHost:]localPort:remoteHost:remotePort` (mirrors SSH's `-L` flag). The flag can be repeated for multiple forwards.
+
+```bash
+# Forward localhost:8080 on your machine to localhost:80 on the agent's machine
+./p2p-client -L 8080:localhost:80
+
+# Forward multiple ports
+./p2p-client -L 8080:localhost:80 -L 5432:db.internal:5432
+
+# Bind on a specific local interface
+./p2p-client -L 0.0.0.0:8080:localhost:80
+```
+
+**How it works:**
+
+```
+Your machine                              Agent's machine
+─────────────────────────────────────────────────────────
+curl localhost:8080  ──►  p2p-client
+                            │ WebRTC DataChannel "fwd-1"
+                          p2p-agent  ──►  localhost:80
+```
+
+Each new TCP connection to the local port creates a dedicated WebRTC DataChannel. The agent dials the remote target and bridges bytes bidirectionally. All traffic is DTLS-encrypted.
+
+### Environment variables (p2p-client)
+
+| Variable | Description |
+|----------|-------------|
+| `P2P_STUN_SERVER` | Custom STUN server URL — prepended to defaults |
+
+```bash
+P2P_STUN_SERVER=stun:mystun.example.com:3478 ./p2p-client -L 8080:localhost:80
 ```
 
 ---
