@@ -223,13 +223,16 @@ Or open `p2p-web/index.html` directly as a `file://` URL — PeerJS works withou
 
 ### 2. Run the agent on the target machine
 
-The browser will display a **Peer ID** and a ready-to-paste one-liner per platform. On the target machine, run the generated command, for example:
+The browser will display a **Peer ID** and a ready-to-paste one-liner per platform that downloads the agent from the [latest GitHub release](https://github.com/noaslr/p2p-shell/releases/latest). On the target machine, run the generated command, for example:
 
 ```bash
 # Linux x86_64
-curl -sSL https://<your-host>/b/p2p-agent/linux-amd64 -o /tmp/p2p-agent \
+curl -sSL https://github.com/noaslr/p2p-shell/releases/latest/download/p2p-agent-linux-amd64 -o /tmp/p2p-agent \
   && chmod +x /tmp/p2p-agent \
   && /tmp/p2p-agent --id <PEER_ID>
+
+# Or use the P2P_TARGET_ID environment variable instead of the --id flag:
+P2P_TARGET_ID=<PEER_ID> /tmp/p2p-agent
 
 # Or build from source and run directly:
 cd p2p-agent && go run . --id <PEER_ID>
@@ -237,11 +240,33 @@ cd p2p-agent && go run . --id <PEER_ID>
 
 The agent connects back to the browser, a PTY shell opens in the terminal, and you have an interactive session.
 
+### Environment variables (agent)
+
+| Variable | Description |
+|----------|-------------|
+| `P2P_TARGET_ID` | Browser Peer ID to connect to — alternative to the `--id` flag |
+| `P2P_STUN_SERVER` | Custom STUN server URL (e.g. `stun:your.server.com:3478`). Prepended to the default server list; defaults are kept as fallback. |
+
+```bash
+# Example: connect using environment variables only
+P2P_TARGET_ID=abc123 P2P_STUN_SERVER=stun:mystun.example.com:3478 ./p2p-agent
+```
+
+### Custom STUN server (browser)
+
+Append `?stun=stun:your.server.com:3478` to the web UI URL. The custom server is prepended to the default list; the defaults remain as fallback.
+
+```
+https://yourhost/index.html?stun=stun:mystun.example.com:3478
+```
+
 ---
 
 ## Self-Hosting
 
-To host p2p-shell yourself (so the download one-liners point to your server):
+The web UI downloads agent binaries from the [latest GitHub release](https://github.com/noaslr/p2p-shell/releases/latest) by default, so no self-hosted file server is required.
+
+To host your own binaries (e.g. for air-gapped environments):
 
 ### Building the Agent Binaries
 
@@ -276,14 +301,12 @@ OUT_DIR=/var/www/html/b/p2p-agent ./build.sh
 
 ### Serving the Web UI
 
-Deploy the `p2p-web/` directory (including the `b/` subdirectory containing agent binaries) to any static web host:
+Deploy the `p2p-web/` directory (including the `b/` subdirectory containing agent binaries) to any static web host, then update the `GITHUB_RELEASES` constant in `script.js` to point to your server's base URL instead.
 
 ```bash
 # Example with nginx — serve p2p-web/ as document root
-# The web UI generates download URLs like https://yourhost.com/b/p2p-agent/linux-amd64
+# Set GITHUB_RELEASES in script.js to: https://yourhost.com/b/p2p-agent
 ```
-
-The `script.js` detects the serving origin automatically (`window.top.location.origin`), so no configuration changes are needed in the web files.
 
 ---
 
@@ -293,4 +316,5 @@ The `script.js` detects the serving origin automatically (`window.top.location.o
 - **No authentication:** Anyone who obtains the Peer ID can connect. The ID is random (assigned by PeerJS) but not secret in a cryptographic sense. Use only on trusted networks or add your own authentication layer.
 - **History disabled on Unix:** The agent sets `HISTFILE=/dev/null` so shell commands are not written to disk.
 - **Signaling server trust:** The default signaling server is `0.peerjs.com` (public, free tier). For sensitive use, run your own [PeerServer](https://github.com/peers/peerjs-server) and update `peerJSHost`/`peerJSPort`/`peerJSKey` in `main.go` and the `PEER_CONFIG` in `script.js`.
+- **Custom STUN:** Use the `P2P_STUN_SERVER` env var (agent) or `?stun=` URL param (browser) to use a private STUN server instead of the public defaults.
 

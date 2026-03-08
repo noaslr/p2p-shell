@@ -56,8 +56,15 @@ func main() {
 	targetID := flag.String("id", "", "Browser peer ID shown on the P2P Shell page")
 	flag.Parse()
 
+	// Fall back to environment variable if --id flag was not provided.
 	if *targetID == "" {
-		fmt.Fprintf(os.Stderr, "Usage: p2p-agent --id <PEER_ID>\n\nOpen %s to get your Peer ID.\n", shellURL)
+		if envID := os.Getenv("P2P_TARGET_ID"); envID != "" {
+			*targetID = envID
+		}
+	}
+
+	if *targetID == "" {
+		fmt.Fprintf(os.Stderr, "Usage: p2p-agent --id <PEER_ID>\n       P2P_TARGET_ID=<PEER_ID> p2p-agent\n\nOpen %s to get your Peer ID.\n", shellURL)
 		os.Exit(1)
 	}
 
@@ -98,13 +105,19 @@ func main() {
 	fmt.Printf("[*] Targeting browser : %s\n", *targetID)
 
 	// ── WebRTC PeerConnection ────────────────────────────────────────────
+	iceServers := []webrtc.ICEServer{
+		{URLs: []string{"stun:stun.l.google.com:19302"}},
+		{URLs: []string{"stun:stun1.l.google.com:19302"}},
+		{URLs: []string{"stun:stun.cloudflare.com:3478"}},
+		{URLs: []string{"stun:stun.stunprotocol.org:3478"}},
+	}
+	// Prepend a custom STUN server if provided via environment variable.
+	if customSTUN := os.Getenv("P2P_STUN_SERVER"); customSTUN != "" {
+		iceServers = append([]webrtc.ICEServer{{URLs: []string{customSTUN}}}, iceServers...)
+		fmt.Printf("[*] Custom STUN server: %s\n", customSTUN)
+	}
 	pc, err := webrtc.NewPeerConnection(webrtc.Configuration{
-		ICEServers: []webrtc.ICEServer{
-			{URLs: []string{"stun:stun.l.google.com:19302"}},
-			{URLs: []string{"stun:stun1.l.google.com:19302"}},
-			{URLs: []string{"stun:stun.cloudflare.com:3478"}},
-			{URLs: []string{"stun:stun.stunprotocol.org:3478"}},
-		},
+		ICEServers: iceServers,
 	})
 	if err != nil {
 		log.Fatalf("[-] PeerConnection: %v", err)

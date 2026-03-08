@@ -29,16 +29,29 @@
 
 /* ═══════════════════════════════════════════════════════════
    PEER CONFIG — STUN servers
+   A custom STUN server can be injected via the URL parameter:
+     ?stun=stun:your.server.com:3478
    ═══════════════════════════════════════════════════════════ */
+const DEFAULT_ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302'    },
+    { urls: 'stun:stun1.l.google.com:19302'   },
+    { urls: 'stun:stun2.l.google.com:19302'   },
+    { urls: 'stun:stun.cloudflare.com:3478'   },
+    { urls: 'stun:stun.stunprotocol.org:3478' },
+];
+
+function buildIceServers() {
+    const params = new URLSearchParams(window.location.search);
+    const customStun = params.get('stun');
+    if (customStun) {
+        return [{ urls: customStun }, ...DEFAULT_ICE_SERVERS];
+    }
+    return DEFAULT_ICE_SERVERS;
+}
+
 const PEER_CONFIG = {
     config: {
-        iceServers: [
-            { urls: 'stun:stun.l.google.com:19302'    },
-            { urls: 'stun:stun1.l.google.com:19302'   },
-            { urls: 'stun:stun2.l.google.com:19302'   },
-            { urls: 'stun:stun.cloudflare.com:3478'   },
-            { urls: 'stun:stun.stunprotocol.org:3478' },
-        ]
+        iceServers: buildIceServers()
     }
 };
 
@@ -94,46 +107,48 @@ function baseURL() {
 /* ═══════════════════════════════════════════════════════════
    COMMAND GENERATION
    ═══════════════════════════════════════════════════════════ */
+const GITHUB_RELEASES = 'https://github.com/noaslr/p2p-shell/releases/latest/download';
+
 const PLATFORMS = {
     'linux-amd64': {
-        bin:  'linux-amd64',
-        tmpl: (base, pid) =>
-`curl -sSL ${base}/b/p2p-agent/linux-amd64 -o /tmp/p2p-agent \\
+        bin:  'p2p-agent-linux-amd64',
+        tmpl: (_base, pid) =>
+`curl -sSL ${GITHUB_RELEASES}/p2p-agent-linux-amd64 -o /tmp/p2p-agent \\
   && chmod +x /tmp/p2p-agent \\
   && /tmp/p2p-agent --id ${pid}`,
     },
     'linux-arm64': {
-        bin:  'linux-arm64',
-        tmpl: (base, pid) =>
-`curl -sSL ${base}/b/p2p-agent/linux-arm64 -o /tmp/p2p-agent \\
+        bin:  'p2p-agent-linux-arm64',
+        tmpl: (_base, pid) =>
+`curl -sSL ${GITHUB_RELEASES}/p2p-agent-linux-arm64 -o /tmp/p2p-agent \\
   && chmod +x /tmp/p2p-agent \\
   && /tmp/p2p-agent --id ${pid}`,
     },
     'linux-arm': {
-        bin:  'linux-arm',
-        tmpl: (base, pid) =>
-`curl -sSL ${base}/b/p2p-agent/linux-arm -o /tmp/p2p-agent \\
+        bin:  'p2p-agent-linux-arm',
+        tmpl: (_base, pid) =>
+`curl -sSL ${GITHUB_RELEASES}/p2p-agent-linux-arm -o /tmp/p2p-agent \\
   && chmod +x /tmp/p2p-agent \\
   && /tmp/p2p-agent --id ${pid}`,
     },
     'darwin-arm64': {
-        bin:  'darwin-arm64',
-        tmpl: (base, pid) =>
-`curl -sSL ${base}/b/p2p-agent/darwin-arm64 -o /tmp/p2p-agent \\
+        bin:  'p2p-agent-darwin-arm64',
+        tmpl: (_base, pid) =>
+`curl -sSL ${GITHUB_RELEASES}/p2p-agent-darwin-arm64 -o /tmp/p2p-agent \\
   && chmod +x /tmp/p2p-agent \\
   && /tmp/p2p-agent --id ${pid}`,
     },
     'darwin-amd64': {
-        bin:  'darwin-amd64',
-        tmpl: (base, pid) =>
-`curl -sSL ${base}/b/p2p-agent/darwin-amd64 -o /tmp/p2p-agent \\
+        bin:  'p2p-agent-darwin-amd64',
+        tmpl: (_base, pid) =>
+`curl -sSL ${GITHUB_RELEASES}/p2p-agent-darwin-amd64 -o /tmp/p2p-agent \\
   && chmod +x /tmp/p2p-agent \\
   && /tmp/p2p-agent --id ${pid}`,
     },
     'windows-amd64': {
-        bin:  'windows-amd64.exe',
-        tmpl: (base, pid) =>
-`powershell -c "Invoke-WebRequest '${base}/b/p2p-agent/windows-amd64.exe' -OutFile $env:TEMP\\p2p-agent.exe; & $env:TEMP\\p2p-agent.exe --id ${pid}"`,
+        bin:  'p2p-agent-windows-amd64.exe',
+        tmpl: (_base, pid) =>
+`powershell -c "Invoke-WebRequest '${GITHUB_RELEASES}/p2p-agent-windows-amd64.exe' -OutFile $env:TEMP\\p2p-agent.exe; & $env:TEMP\\p2p-agent.exe --id ${pid}"`,
     },
 };
 
