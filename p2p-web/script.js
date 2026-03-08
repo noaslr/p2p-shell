@@ -115,40 +115,40 @@ const PLATFORMS = {
         tmpl: (_base, pid) =>
 `curl -sSL ${GITHUB_RELEASES}/p2p-agent-linux-amd64 -o /tmp/p2p-agent \\
   && chmod +x /tmp/p2p-agent \\
-  && /tmp/p2p-agent --id ${pid}`,
+  && P2P_TARGET_ID=${pid} /tmp/p2p-agent`,
     },
     'linux-arm64': {
         bin:  'p2p-agent-linux-arm64',
         tmpl: (_base, pid) =>
 `curl -sSL ${GITHUB_RELEASES}/p2p-agent-linux-arm64 -o /tmp/p2p-agent \\
   && chmod +x /tmp/p2p-agent \\
-  && /tmp/p2p-agent --id ${pid}`,
+  && P2P_TARGET_ID=${pid} /tmp/p2p-agent`,
     },
     'linux-arm': {
         bin:  'p2p-agent-linux-arm',
         tmpl: (_base, pid) =>
 `curl -sSL ${GITHUB_RELEASES}/p2p-agent-linux-arm -o /tmp/p2p-agent \\
   && chmod +x /tmp/p2p-agent \\
-  && /tmp/p2p-agent --id ${pid}`,
+  && P2P_TARGET_ID=${pid} /tmp/p2p-agent`,
     },
     'darwin-arm64': {
         bin:  'p2p-agent-darwin-arm64',
         tmpl: (_base, pid) =>
 `curl -sSL ${GITHUB_RELEASES}/p2p-agent-darwin-arm64 -o /tmp/p2p-agent \\
   && chmod +x /tmp/p2p-agent \\
-  && /tmp/p2p-agent --id ${pid}`,
+  && P2P_TARGET_ID=${pid} /tmp/p2p-agent`,
     },
     'darwin-amd64': {
         bin:  'p2p-agent-darwin-amd64',
         tmpl: (_base, pid) =>
 `curl -sSL ${GITHUB_RELEASES}/p2p-agent-darwin-amd64 -o /tmp/p2p-agent \\
   && chmod +x /tmp/p2p-agent \\
-  && /tmp/p2p-agent --id ${pid}`,
+  && P2P_TARGET_ID=${pid} /tmp/p2p-agent`,
     },
     'windows-amd64': {
         bin:  'p2p-agent-windows-amd64.exe',
         tmpl: (_base, pid) =>
-`powershell -c "Invoke-WebRequest '${GITHUB_RELEASES}/p2p-agent-windows-amd64.exe' -OutFile $env:TEMP\\p2p-agent.exe; & $env:TEMP\\p2p-agent.exe --id ${pid}"`,
+`powershell -c "$env:P2P_TARGET_ID='${pid}'; Invoke-WebRequest '${GITHUB_RELEASES}/p2p-agent-windows-amd64.exe' -OutFile $env:TEMP\\p2p-agent.exe; & $env:TEMP\\p2p-agent.exe"`,
     },
 };
 
@@ -172,7 +172,7 @@ function highlightCmd(text, pid) {
         .replace(/(#[^\n]*)/g, '<span class="cmd-comment">$1</span>')
         .replace(/(https?:\/\/[^\s\\]+)/g, '<span class="cmd-str">$1</span>')
         .replace(new RegExp(pid, 'g'), `<span class="cmd-id">${pid}</span>`)
-        .replace(/(--id)/g, '<span class="cmd-flag">$1</span>');
+        .replace(/(--id|P2P_TARGET_ID)/g, '<span class="cmd-flag">$1</span>');
 }
 
 /* ═══════════════════════════════════════════════════════════
